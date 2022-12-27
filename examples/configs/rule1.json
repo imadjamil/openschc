@@ -1,12 +1,10 @@
-[{
-   "RuleID" : 12,
-   "RuleIDLength" : 4,
-   "Compression" : []
- },{
-  "RuleID" : 12,
-  "RuleIDLength" : 6,
-  "Fragmentation" :  {
-      "FRMode": "NoAck",
-      "FRDirection" : "UP"
+[
+ {
+  "RuleID": 12,
+  "RuleIDLength": 8,
+  "Fragmentation": {
+   "FRMode": "NoAck",
+   "FRDirection": "UP"
   }
-}]
+ }
+]

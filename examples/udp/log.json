@@ -1,0 +1,97 @@
+{
+ "('IPV6.VER', 1)": [
+  6,
+  4
+ ],
+ "('IPV6.TC', 1)": [
+  1,
+  8
+ ],
+ "('IPV6.FL', 1)": [
+  144470,
+  20
+ ],
+ "('IPV6.LEN', 1)": [
+  30,
+  16,
+  "fixed"
+ ],
+ "('IPV6.NXT', 1)": [
+  17,
+  8,
+  "fixed"
+ ],
+ "('IPV6.HOP_LMT', 1)": [
+  30,
+  8,
+  "fixed"
+ ],
+ "('IPV6.DEV_PREFIX', 1)": [],
+ "('IPV6.DEV_IID', 1)": [],
+ "('IPV6.APP_PREFIX', 1)": [],
+ "('IPV6.APP_IID', 1)": [],
+ "('UDP.DEV_PORT', 1)": [
+  5682,
+  16
+ ],
+ "('UDP.APP_PORT', 1)": [
+  5683,
+  16
+ ],
+ "('UDP.LEN', 1)": [
+  30,
+  16
+ ],
+ "('UDP.CKSUM', 1)": [
+  0,
+  16
+ ],
+ "('COAP.VER', 1)": [
+  1,
+  2
+ ],
+ "('COAP.TYPE', 1)": [
+  0,
+  2
+ ],
+ "('COAP.TKL', 1)": [
+  1,
+  4
+ ],
+ "('COAP.CODE', 1)": [
+  2,
+  8
+ ],
+ "('COAP.MID', 1)": [
+  1,
+  16
+ ],
+ "('COAP.TOKEN', 1)": [
+  10,
+  8
+ ],
+ "('COAP.Uri-Path', 1)": [
+  "foo",
+  24,
+  "variable"
+ ],
+ "('COAP.Uri-Path', 2)": [
+  "bar",
+  24,
+  "variable"
+ ],
+ "('COAP.Uri-Path', 3)": [
+  "ABCD==",
+  48,
+  "variable"
+ ],
+ "('COAP.Uri-Query', 1)": [
+  "k=eth0",
+  48,
+  "variable"
+ ],
+ "('COAP.END', 1)": [
+  255,
+  8
+ ]
+}

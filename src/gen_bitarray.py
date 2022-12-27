@@ -282,7 +282,7 @@ class BitBuffer:
 
         if format == "bin":
             for x in self._content:
-                print ("{:08b}".format(x), end = "", file=file)
+                print ("{:08b} ".format(x), end = "", file=file)
             print ("/{}".format(self._wpos), file=file)
             print ('='*self._rpos, end="", file=file)
             print ("-"*(self._wpos-self._rpos), file=file)

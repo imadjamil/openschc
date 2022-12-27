@@ -32,7 +32,7 @@ option_names = {
     35: T_COAP_OPT_PROXY_URI,
     39: T_COAP_OPT_PROXY_SCHEME,
     60: T_COAP_OPT_SIZE1,
-    258: T_COAP_OPT_NO_RESP
+    258: T_COAP_OPT_NO_RESP,
 }
 
 
@@ -45,7 +45,13 @@ class Parser:
         self.protocol = protocol
         self.header_fields = {}
 
-    def parse(self, pkt, direction, layers=["IPv6", "ICMP", "UDP", "COAP"], start="IPv6"):
+    def parse(
+            self,
+            pkt: bytearray,
+            direction,
+            layers=["IPv6", "ICMP", "UDP", "COAP"],
+            start="IPv6"
+    ):
         """
         Parsing a byte array:
         - pkt is the bytearray to be parsed
@@ -64,104 +70,143 @@ class Parser:
 
         next_header = start
 
-        if  next_header == "IPv6" :
-            version = unpack ("!B", pkt[:1])
-            #assert version[0]>>4 == 6                 # only IPv6
-            if version[0]>>4 == 6 != 6:
+        if next_header == "IPv6":
+            version = unpack("!B", pkt[:1])
+            # assert version[0]>>4 == 6                 # only IPv6
+            if version[0] >> 4 == 6 != 6:
                 return None, None, "IP.version != 6"
 
-            #assert len(pkt) >= 40  # IPv6 Header is 40 byte long
+            # assert len(pkt) >= 40  # IPv6 Header is 40 byte long
             if len(pkt) < 40:
                 return None, None, "packet too short"
-            firstBytes = unpack('!BBHHBBQQQQ', pkt[:40]) # IPv6 \ UDP \ CoAP header
-            self.protocol._log("compr_parser - firstBytes {}".format(firstBytes))
 
-            #                                         Value           size nature
-            self.header_fields[T_IPV6_VER, 1]      = [firstBytes[0] >> 4, 4]
-            self.header_fields[T_IPV6_TC, 1]       = [(firstBytes[0] & 0x0F) << 4 | (firstBytes[1] & 0xF0) >> 4, 8]
-            self.header_fields[T_IPV6_FL, 1]       = [(firstBytes[1] & 0x0F ) << 16 | firstBytes[2], 20]
-            self.header_fields[T_IPV6_LEN, 1]      = [firstBytes[3], 16,  'fixed']
-            self.header_fields[T_IPV6_NXT, 1]      = [firstBytes[4], 8,  'fixed']
-            self.header_fields[T_IPV6_HOP_LMT, 1]  = [firstBytes[5], 8,  'fixed']
+            # IJ: ! for network (big-endian)
+            # IJ: B for unsigned char (1 byte)
+            # IJ: H for unsigned short (2 bytes)
+            # IJ: H for unsigned long long (8 bytes)
+            firstBytes = unpack("!BBHHBBQQQQ", pkt[:40])  # IPv6 \ UDP \ CoAP header
+            self.protocol._log("IPv6 header fields: {}".format(firstBytes))
+
+            # Value size nature
+            self.header_fields[T_IPV6_VER, 1] = [firstBytes[0] >> 4, 4]
+            self.header_fields[T_IPV6_TC, 1] = [
+                (firstBytes[0] & 0x0F) << 4 | (firstBytes[1] & 0xF0) >> 4,
+                8,
+            ]
+            self.header_fields[T_IPV6_FL, 1] = [
+                (firstBytes[1] & 0x0F) << 16 | firstBytes[2],
+                20,
+            ]
+            self.header_fields[T_IPV6_LEN, 1] = [firstBytes[3], 16, "fixed"]
+            self.header_fields[T_IPV6_NXT, 1] = [firstBytes[4], 8, "fixed"]
+            self.header_fields[T_IPV6_HOP_LMT, 1] = [firstBytes[5], 8, "fixed"]
 
             # The prefix, DEV_PREFIX and APP_PREFIX, should be in bytes
             # to keep its length and to be aligned to the left.
             # This is because it will be used to compare with the one
             # in the src/dst address of IPv6 packet.
             if direction == T_DIR_UP:
-                self.header_fields[T_IPV6_DEV_PREFIX, 1]     = [firstBytes[6].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_DEV_IID, 1]        = [firstBytes[7].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_APP_PREFIX, 1]     = [firstBytes[8].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_APP_IID, 1]        = [firstBytes[9].to_bytes(8, "big"), 64]
+                self.header_fields[T_IPV6_DEV_PREFIX, 1] = [
+                    firstBytes[6].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_DEV_IID, 1] = [
+                    firstBytes[7].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_APP_PREFIX, 1] = [
+                    firstBytes[8].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_APP_IID, 1] = [
+                    firstBytes[9].to_bytes(8, "big"),
+                    64,
+                ]
             elif direction == T_DIR_DW:
-                self.header_fields[T_IPV6_APP_PREFIX, 1]     = [firstBytes[6].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_APP_IID, 1]        = [firstBytes[7].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_DEV_PREFIX, 1]     = [firstBytes[8].to_bytes(8, "big"), 64]
-                self.header_fields[T_IPV6_DEV_IID, 1]        = [firstBytes[9].to_bytes(8, "big"), 64]
+                self.header_fields[T_IPV6_APP_PREFIX, 1] = [
+                    firstBytes[6].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_APP_IID, 1] = [
+                    firstBytes[7].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_DEV_PREFIX, 1] = [
+                    firstBytes[8].to_bytes(8, "big"),
+                    64,
+                ]
+                self.header_fields[T_IPV6_DEV_IID, 1] = [
+                    firstBytes[9].to_bytes(8, "big"),
+                    64,
+                ]
 
-
-            if not (self.header_fields[T_IPV6_NXT, 1][0] == 17 or self.header_fields[T_IPV6_NXT, 1][0] == 58):
+            if not (
+                self.header_fields[T_IPV6_NXT, 1][0] == 17
+                or self.header_fields[T_IPV6_NXT, 1][0] == 58
+            ):
                 return None, None, "packet neither UDP nor ICMP"
 
-            if self.header_fields[T_IPV6_NXT, 1][0] == 17: next_layer = "UDP"
-            if self.header_fields[T_IPV6_NXT, 1][0] == 58: next_layer = "ICMP"
+            if self.header_fields[T_IPV6_NXT, 1][0] == 17:
+                next_layer = "UDP"
+            if self.header_fields[T_IPV6_NXT, 1][0] == 58:
+                next_layer = "ICMP"
 
-            pos = 40 # IPv6 is fully parsed
+            pos = 40  # IPv6 is fully parsed
 
         if "UDP" in layers and next_layer == "UDP":
-            udpBytes = unpack('!HHHH', pkt[pos:pos+8])
+            udpBytes = unpack("!HHHH", pkt[pos : pos + 8])
             if direction == T_DIR_UP:
-                self.header_fields[T_UDP_DEV_PORT, 1]   = [udpBytes[0], 16]
-                self.header_fields[T_UDP_APP_PORT, 1]   = [udpBytes[1], 16]
+                self.header_fields[T_UDP_DEV_PORT, 1] = [udpBytes[0], 16]
+                self.header_fields[T_UDP_APP_PORT, 1] = [udpBytes[1], 16]
             else:
-                self.header_fields[T_UDP_APP_PORT, 1]   = [udpBytes[0], 16]
-                self.header_fields[T_UDP_DEV_PORT, 1]   = [udpBytes[1], 16]
-            self.header_fields[T_UDP_LEN, 1]            = [udpBytes[2], 16]
-            self.header_fields[T_UDP_CKSUM, 1]          = [udpBytes[3], 16]
+                self.header_fields[T_UDP_APP_PORT, 1] = [udpBytes[0], 16]
+                self.header_fields[T_UDP_DEV_PORT, 1] = [udpBytes[1], 16]
+            self.header_fields[T_UDP_LEN, 1] = [udpBytes[2], 16]
+            self.header_fields[T_UDP_CKSUM, 1] = [udpBytes[3], 16]
 
             pos += 8
 
             next_layer = "COAP"
 
         if "ICMP" in layers and next_layer == "ICMP":
-            icmpBytes = unpack('!BBH', pkt[pos:pos+4])
+            icmpBytes = unpack("!BBH", pkt[pos : pos + 4])
 
-            self.header_fields[T_ICMPV6_TYPE, 1]        = [icmpBytes[0], 8]
-            self.header_fields[T_ICMPV6_CODE, 1]        = [icmpBytes[1], 8]
-            self.header_fields[T_ICMPV6_CKSUM, 1]       = [icmpBytes[2], 16]
+            self.header_fields[T_ICMPV6_TYPE, 1] = [icmpBytes[0], 8]
+            self.header_fields[T_ICMPV6_CODE, 1] = [icmpBytes[1], 8]
+            self.header_fields[T_ICMPV6_CKSUM, 1] = [icmpBytes[2], 16]
 
             pos += 4
-            if icmpBytes[0] == 128 or icmpBytes[0] == 129: #icmp echo request or reply
-                echoHeader = unpack('!HH', pkt[pos:pos+4])
-                self.header_fields[T_ICMPV6_IDENT, 1]       = [echoHeader[0], 16]
-                self.header_fields[T_ICMPV6_SEQNO, 1]        = [echoHeader[1], 16]
+            if icmpBytes[0] == 128 or icmpBytes[0] == 129:  # icmp echo request or reply
+                echoHeader = unpack("!HH", pkt[pos : pos + 4])
+                self.header_fields[T_ICMPV6_IDENT, 1] = [echoHeader[0], 16]
+                self.header_fields[T_ICMPV6_SEQNO, 1] = [echoHeader[1], 16]
                 pos += 4
-
 
         if "COAP" in layers and next_layer == "COAP":
             field_position = {}
-            coapBytes = unpack('!BBH', pkt[pos:pos+4])
+            coapBytes = unpack("!BBH", pkt[pos : pos + 4])
 
-            self.header_fields[T_COAP_VERSION, 1]        = [coapBytes[0] >> 6, 2]
-            self.header_fields[T_COAP_TYPE, 1]           = [(coapBytes[0] & 0x30) >> 4, 2]
-            self.header_fields[T_COAP_TKL, 1]            = [coapBytes[0] & 0x0F, 4]
-            self.header_fields[T_COAP_CODE, 1]           = [coapBytes[1], 8]
-            self.header_fields[T_COAP_MID, 1]            = [coapBytes[2], 16]
+            self.header_fields[T_COAP_VERSION, 1] = [coapBytes[0] >> 6, 2]
+            self.header_fields[T_COAP_TYPE, 1] = [(coapBytes[0] & 0x30) >> 4, 2]
+            self.header_fields[T_COAP_TKL, 1] = [coapBytes[0] & 0x0F, 4]
+            self.header_fields[T_COAP_CODE, 1] = [coapBytes[1], 8]
+            self.header_fields[T_COAP_MID, 1] = [coapBytes[2], 16]
 
             pos += 4
 
             token = int(0)
-            tkl   = self.header_fields[T_COAP_TKL, 1][0]
+            tkl = self.header_fields[T_COAP_TKL, 1][0]
             for i in range(0, tkl):
                 token <<= 8
-                token += int(pkt[pos+i])
+                token += int(pkt[pos + i])
                 pos += 1
 
-            self.header_fields[T_COAP_TOKEN, 1] = [token, tkl*8]
+            self.header_fields[T_COAP_TOKEN, 1] = [token, tkl * 8]
 
             option_number = 0
-            while (pos < len(pkt)):
-                if (int(pkt[pos]) == 0xFF): break
+            while pos < len(pkt):
+                if int(pkt[pos]) == 0xFF:
+                    break
 
                 deltaTL = int(pkt[pos])
                 pos += 1
@@ -170,13 +215,13 @@ class Parser:
                 if deltaT == 13:
                     deltaT = int(pkt[pos]) + 13
                     pos += 1
-                
+
                 # /!\ Larger value not implemented
 
                 option_number += int(deltaT)
 
                 L = int(deltaTL & 0x0F)
-                if L == 13: 
+                if L == 13:
                     L = int(pkt[pos]) + 13
                     pos += 1
                 # /!\ Larger value not implemented
@@ -187,23 +232,24 @@ class Parser:
                 except:
                     field_position[option_number] = 1
 
-                option_value = ''
+                option_value = ""
 
-                for i in range (0, L):
+                for i in range(0, L):
                     option_value += chr(pkt[pos])
                     pos += 1
                     # /!\ check if max length is reached
 
                 try:
-                    self.header_fields[option_names[option_number], field_position[option_number]] = [option_value, L*8,  "variable"]
+                    self.header_fields[
+                        option_names[option_number], field_position[option_number]
+                    ] = [option_value, L * 8, "variable"]
                 except:
                     raise ValueError("CoAP Option {} not found".format(option_number))
 
-            if(pos < len(pkt)):
-                assert int(pkt[pos]) == 0xFF # if data reamins, an 0xFF must be present
+            if pos < len(pkt):
+                assert int(pkt[pos]) == 0xFF  # if data reamins, an 0xFF must be present
 
                 self.header_fields[T_COAP_OPT_END, 1] = [0xFF, 8]
                 pos += 1
-
 
         return self.header_fields, pkt[pos:], None

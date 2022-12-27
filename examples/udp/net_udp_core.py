@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import argparse
 import sched
 import sys
 import select
@@ -9,33 +8,37 @@ import os
 
 # --------------------------------------------------
 
-sys.path.extend(["../../src"]) # XXX: temporary
+sys.path.extend(["../../src"])  # XXX: temporary
 
 import gen_rulemanager
 import protocol
 
 # --------------------------------------------------
 
-MAX_PACKET_SIZE = 1024*1024
+MAX_PACKET_SIZE = 1024 * 1024
 
 # --------------------------------------------------
 
+
 def address_to_string(address):
-    host,port = address
+    host, port = address
     return "{}|{}".format(host, port)
+
 
 def string_to_address(string_address):
     str_host, str_port = string_address.split("|")
     return (str_host, int(str_port))
 
+
 # --------------------------------------------------
+
 
 class UdpUpperLayer:
     def __init__(self):
         self.protocol = None
 
     # ----- AbstractUpperLayer interface (see: architecture.py)
-    
+
     def _set_protocol(self, protocol):
         self.protocol = protocol
 
@@ -53,7 +56,9 @@ class UdpUpperLayer:
         dst_address = address_to_string(udp_dst)
         self.protocol.schc_send(None, dst_address, packet)
 
-# --------------------------------------------------        
+
+# --------------------------------------------------
+
 
 class UdpLowerLayer:
     def __init__(self, udp_src, udp_dst):
@@ -63,7 +68,7 @@ class UdpLowerLayer:
         self.udp_dst = udp_dst
 
     # ----- AbstractLowerLayer interface (see: architecture.py)
-        
+
     def _set_protocol(self, protocol):
         self.protocol = protocol
         self._actual_init()
@@ -73,12 +78,12 @@ class UdpLowerLayer:
             dst_address = self.udp_dst
         else:
             dst_address = string_to_address(dst_str_address)
-        self.sd.sendto(packet, dst_address)            
+        self.sd.sendto(packet, dst_address)
         if transmit_callback is not None:
             transmit_callback(1)
 
     def get_mtu_size(self):
-        return 72 # XXX
+        return 72  # XXX
 
     # ----- end AbstractLowerLayer interface
 
@@ -87,8 +92,7 @@ class UdpLowerLayer:
         self.sd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sd.bind(self.udp_src)
         scheduler = self.protocol.get_system().get_scheduler()
-        scheduler.add_fd_callback(self.sd.fileno(),
-                                  self.event_packet_received, ())
+        scheduler.add_fd_callback(self.sd.fileno(), self.event_packet_received, ())
 
     def event_packet_received(self):
         """Called but the SelectScheduler when an UDP packet is received"""
@@ -96,7 +100,9 @@ class UdpLowerLayer:
         sender_address = address_to_string(address)
         self.protocol.schc_recv(sender_address, packet)
 
+
 # --------------------------------------------------
+
 
 class SelectScheduler:
     def __init__(self):
@@ -104,7 +110,7 @@ class SelectScheduler:
         self.sched = sched.scheduler(delayfunc=self._sleep)
 
     # ----- AbstractScheduler Interface (see: architecture.py)
-         
+
     def add_event(self, rel_time, callback, args):
         event = self.sched.enter(rel_time, None, callback, args)
         return event
@@ -122,7 +128,6 @@ class SelectScheduler:
         the associated callbacks are called and the wait is stop.
         """
         self.wait_one_callback_until(delay)
-
 
     def wait_one_callback_until(self, max_delay):
         """Wait at most `max_delay` second, for available input (e.g. packet).
@@ -146,10 +151,12 @@ class SelectScheduler:
     def run(self):
         long_time = 3600
         while True:
-            self.sched.run() # when this returns, there is no event left ...
-            self.wait_one_callback_until(long_time) # hence we wait for input
+            self.sched.run()  # when this returns, there is no event left ...
+            self.wait_one_callback_until(long_time)  # hence we wait for input
 
-# --------------------------------------------------        
+
+# --------------------------------------------------
+
 
 class UdpSystem:
     def __init__(self):
@@ -160,5 +167,6 @@ class UdpSystem:
 
     def log(self, name, message):
         print(name, message)
+
 
 # --------------------------------------------------

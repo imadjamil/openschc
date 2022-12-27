@@ -9,6 +9,8 @@
 # Import some internal modules (fake/temporary versions)
 
 import sys
+from rich import print
+import inspect
 
 if sys.implementation.name == "micropython":
     import utime as time

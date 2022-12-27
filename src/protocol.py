@@ -6,6 +6,7 @@
 
 from gen_base_import import *  # used for now for differing modules in py/upy
 from gen_utils import dprint, dpprint, set_debug_output
+from rich import print
 
 # ---------------------------------------------------------------------------
 
@@ -166,7 +167,14 @@ class SCHCProtocol:
         # Parse packet as IP packet and apply compression rule
         P = Parser(self)
         parsed_packet, residue, parsing_error = P.parse(raw_packet, t_dir)
+
         self._log("parser {} {} {}".format(parsed_packet, residue, parsing_error))
+
+        # imad-todo: pretty print the parsed packet
+        # it seems that the rich does net print binary values ...
+        # from rich import print_json
+        print(parsed_packet)
+        
         if parsed_packet is None:
             return BitBuffer(raw_packet)
 
