@@ -512,7 +512,7 @@ class Compressor:
             # IJ: proposed correction
             # dprint(f"{bin(full_value)=}")
             for i in range(size):
-                bit_to_set = full_value & (0x01 << (size-1-i))
+                bit_to_set = full_value & (0x01 << (size - 1 - i))
                 # dprint(f"{i=}: {bit_to_set=}")
                 output.set_bit(bit_to_set)
                 # full_value >>= 1
@@ -520,6 +520,11 @@ class Compressor:
             dprint(f"{rule[T_TV]=}, value='{field[0]}'")
             for i in range(rule[T_MO_VAL] // 8, field[1] // 8):
                 dprint(i, "===>", field[0][i])
+                # IJ: the lsb value is not added to output
+                # IJ: proposed solution
+                val = field[0][i].encode("utf-8")
+                dprint(f"{val=} {output=}")
+                output.add_bytes(val)
             pass
         else:
             raise ValueError("CA value-sent unknown type")
@@ -682,10 +687,12 @@ class Decompressor:
     #     return tv
 
     def rx_cda_not_sent(self, rule, in_bbuf):
+        dprint(inspect.currentframe().f_code.co_name)
         if rule[T_FL] == "var":
             if type(rule[T_TV]) == str:
                 size = len(rule[T_TV]) * 8
-            elif type(rule[T_TV]) == int:  # return the minimal size, used in CoAP
+            elif type(rule[T_TV]) == int:
+                # return the minimal size, used in CoAP
                 size = 0
                 v = rule[T_TV]
                 while v != 0:
@@ -700,21 +707,27 @@ class Decompressor:
 
     def rx_cda_val_sent(self, rule, in_bbuf):
         # XXX not implemented that the variable length size.
+        dprint(inspect.currentframe().f_code.co_name)
 
         if rule[T_FL] == "var":
             size = in_bbuf.get_length() * 8
-            dprint("siZE = ", size)
+            dprint(f"var FL {size=}")
             if size == 0:
-                return (None, 0)
+                return [None, 0]
         elif rule[T_FL] == "tkl":
             size = self.parsed_packet[(T_COAP_TKL, 1)][0] * 8
-            dprint("token size", size)
+            dprint("CoAP Token Length FL size", size)
         elif type(rule[T_FL]) == int:
             size = rule[T_FL]
+            dprint(f"int FL {size=}")
         else:
             raise ValueError("cannot read field length")
-        # in_bbuf.display("bin")
+
         val = in_bbuf.get_bits(size)
+
+        if rule[T_FL] == "var":
+            # assuming that this is a str for now
+            val = int.to_bytes(val, size // 8, "big")
 
         return [val, size]
 
@@ -722,11 +735,12 @@ class Decompressor:
         # 7.5.5.  mapping-sent CDA
         # The number of bits sent is the minimal size for coding all the
         # possible indices.
+        dprint(inspect.currentframe().f_code.co_name)
 
         size = len(bin(len(rule[T_TV]) - 1)[2:])
         val = in_bbuf.get_bits(size)
 
-        dprint("====>", rule[T_TV][val], len(rule[T_TV][val]), rule[T_FL])
+        dprint(f"{rule[T_TV][val]=}, {len(rule[T_TV][val])=}, {rule[T_FL]=}")
 
         if rule[T_FL] == "var":
             size = len(rule[T_TV][val])
@@ -754,13 +768,14 @@ class Decompressor:
         tmp_bbuf = BitBuffer()
 
         if rule[T_FL] == "var":
-            send_length = in_bbuf.get_length()
+            # assuming that this is a str for now
+            send_length = in_bbuf.get_length() * 8
             total_size = rule[T_MO_VAL] + send_length
             val = rule[T_TV]
         elif type(rule[T_TV]) == int:
             total_size = rule[T_FL]
             send_length = rule[T_FL] - rule[T_MO_VAL]
-            val = self.get_msb(rule[T_TV], rule[T_FL], rule[T_MO_VAL])
+            val = self.get_msb(rule[T_TV], total_size, rule[T_MO_VAL])
         else:
             raise ValueError("FL could be var or int")
         # IJ: this should add the MO.VAL MSB bits of TV not the LSBs
@@ -778,15 +793,25 @@ class Decompressor:
 
         dprint(f"{val=} {tmp_bbuf=}")
 
-        return [bytes(tmp_bbuf.get_content()), total_size]
+        val = tmp_bbuf.get_content()
+
+        if rule[T_FL] == "var":
+            # assuming that this is a str for now
+            val = bytes(val)
+        elif type(rule[T_TV]) == int:
+            val = int.from_bytes(val, "big")
+
+        return [val, total_size]
 
     def rx_cda_comp_len(self, rule, in_bbuf):
         # will update the length field later.
-        return ("LL" * (rule[T_FL] // 8), rule[T_FL])
+        # TODO
+        return ["LL" * (rule[T_FL] // 8), rule[T_FL]]
 
     def rx_cda_comp_cksum(self, rule, in_bbuf):
         # will update the length field later.
-        return ("CC" * (rule[T_FL] // 8), rule[T_FL])
+        # TODO
+        return ["CC" * (rule[T_FL] // 8), rule[T_FL]]
 
     # def decompress(self, context, packet_bbuf, di=T_DIR_DW):
     #     """ decompress the data in the packet_bbuf according to the rule_set.
@@ -871,7 +896,7 @@ class Decompressor:
             dprint(r)
             if r[T_DI] in [T_DIR_BI, direction]:
                 full_field = self.__func_rx_cda[r[T_CDA]](r, schc)
-                dprint("<<<", full_field)
+                dprint(rf"<<< {full_field}")
                 self.parsed_packet[(r[T_FID], r[T_FP])] = full_field
                 # pprint.pprint (self.parsed_packet)
 
