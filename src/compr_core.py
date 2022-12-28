@@ -4,6 +4,7 @@
 """
 from gen_base_import import *
 from gen_utils import dprint
+from gen_utils import enable_debug_print as debug
 
 import pprint
 
@@ -583,7 +584,8 @@ class Compressor:
             output_bbuf.add_bits(rule[T_RULEID], rule[T_RULEIDLENGTH])
             dprint("rule {}/{}".format(rule[T_RULEID], rule[T_RULEIDLENGTH]))
             dprint(f"{output_bbuf=}")
-            output_bbuf.display(format="bin")
+            if debug: 
+                output_bbuf.display(format="bin")
 
         for r in rule["Compression"]:
             dprint("Next rule item:", r)
@@ -600,7 +602,8 @@ class Compressor:
                         output=output_bbuf,
                     )
                     dprint(f"{output_bbuf=}")
-                    output_bbuf.display(format="bin")
+                    if debug:
+                        output_bbuf.display(format="bin")
                 else:  # not found in packet, but is variable length can be coded as 0
                     dprint("NOT in packet, send as variable length")
                     self.__func_tx_cda[T_CDA_VAL_SENT](

@@ -152,10 +152,8 @@ class BitBuffer:
 
         """
         if size < 0xF:
-            print ("size =======>", size)
             self.add_bits(size, 4)
         elif size < 0xFF:
-            print ("size =================>", size)
             self.add_bits(0x0F, 4)
             self.add_bits(size, 8)
         elif size < 0xFFFF:
@@ -166,7 +164,6 @@ class BitBuffer:
          
     def get_length (self):
         val = self.get_bits(4)
-        print ("read length =", val)
         if val == 0xF:
             val = self.get_bits(8)
             if val == 0xFF:

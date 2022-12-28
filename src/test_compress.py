@@ -45,9 +45,9 @@ if r != None:
     # print("selected rule is ", r)
     schc_packet = C.compress(rule=r, parsed_packet=v[0], data=v[1], direction=T_DIR_UP)
 
-    print(schc_packet)
+    print(f"{schc_packet=}")
     # print(f"{schc_packet.get_length()=}")
-    schc_packet.display("bin")
+    # schc_packet.display("bin")
 
     rbis = RM.FindRuleFromSCHCpacket(schc=schc_packet)
     #

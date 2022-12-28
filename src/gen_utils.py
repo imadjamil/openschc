@@ -5,8 +5,8 @@ import pprint
 import types
 from rich import print
 
-enable_debug_print = True
-# enable_debug_print = False
+# enable_debug_print = True
+enable_debug_print = False
 
 def set_debug_output(state):
     global enable_debug_print
