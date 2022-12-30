@@ -128,7 +128,8 @@ class Parser:
                 self.header_fields[T_IPV6_APP_IID, 1]        = [firstBytes[7].to_bytes(8, "big"), 64]
                 self.header_fields[T_IPV6_DEV_PREFIX, 1]     = [firstBytes[8].to_bytes(8, "big"), 64]
                 self.header_fields[T_IPV6_DEV_IID, 1]        = [firstBytes[9].to_bytes(8, "big"), 64]
-
+            
+            # print(f"IJ: {self.header_fields=}")
 
             if not (self.header_fields[T_IPV6_NXT, 1][0] == 17 or self.header_fields[T_IPV6_NXT, 1][0] == 58):
                 return None, None, "packet neither UDP nor ICMP"

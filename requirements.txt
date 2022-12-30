@@ -1,3 +1,5 @@
 kamene==0.32
 scapy==2.4.5
 python-pcapng
+cbor2
+requests
